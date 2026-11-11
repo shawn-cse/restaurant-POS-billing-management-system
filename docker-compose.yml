@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: restaurant-pos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nodedr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nodedr_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-nodedr_restaurant}
+    expose:
+      - "5432"
+    # Uncomment to expose PostgreSQL to host on port 5432:
+    # ports:
+    #   - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nodedr}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+      args:
+        APP_VERSION: "${APP_VERSION:-dev}"
+    image: restaurant-pos-backend:${APP_VERSION:-dev}
+    container_name: restaurant-pos-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-nodedr}:${POSTGRES_PASSWORD:-nodedr_dev_pw}@postgres:5432/${POSTGRES_DB:-nodedr_restaurant}"
+      JWT_SECRET: "${JWT_SECRET:-restaurant_pos_secret_jwt_key_2026_dev_mode}"
+      JWT_EXPIRES_IN: "${JWT_EXPIRES_IN:-12h}"
+      PORT: "4000"
+      CORS_ORIGIN: "${FRONTEND_ORIGIN:-http://localhost:8080}"
+      COOKIE_SECURE: "${COOKIE_SECURE:-false}"
+      TRUST_PROXY: "${TRUST_PROXY:-}"
+      INTEGRATION_WRITE_LIMIT_PER_MIN: "${INTEGRATION_WRITE_LIMIT_PER_MIN:-30}"
+      INTEGRATION_READ_LIMIT_PER_MIN: "${INTEGRATION_READ_LIMIT_PER_MIN:-300}"
+      UPLOADS_DIR: "/data/uploads"
+      INTEGRATION_SECRET_KEY: "${INTEGRATION_SECRET_KEY:-}"
+      INTEGRATION_SECRET_KEY_FILE: "${INTEGRATION_SECRET_KEY_FILE:-}"
+      PUBLIC_BASE_URL: "${PUBLIC_BASE_URL:-}"
+      VERIFACTU_PRODUCER_ID: "${VERIFACTU_PRODUCER_ID:-}"
+      VERIFACTU_PRODUCER_NAME: "${VERIFACTU_PRODUCER_NAME:-}"
+      VERIFACTU_PRODUCER_COUNTRY: "${VERIFACTU_PRODUCER_COUNTRY:-}"
+      VERIFACTU_SYSTEM_ID: "${VERIFACTU_SYSTEM_ID:-}"
+      SYNC_API_KEY: "${SYNC_API_KEY:-}"
+      UPDATER_URL: "${UPDATER_URL:-}"
+      UPDATER_TOKEN: "${UPDATER_TOKEN:-}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "4000"
+    volumes:
+      - uploads_data:/data/uploads
+      # Direct-USB thermal printing (Linux hosts only):
+      # Uncomment the lines below if running directly on a Linux host with a USB receipt printer:
+      # - /dev/bus/usb:/dev/bus/usb
+    # device_cgroup_rules:
+    #   - 'c 189:* rmw'
+    #   - 'c 180:* rmw'
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        BACKEND_URL: "http://backend:4000"
+    image: restaurant-pos-web:${APP_VERSION:-dev}
+    container_name: restaurant-pos-web
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8080}:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pg_data:
+  uploads_data:

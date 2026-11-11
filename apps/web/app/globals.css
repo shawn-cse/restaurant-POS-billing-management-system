@@ -1,0 +1,364 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-primary-hover: var(--primary-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* UrbanBite Brand Extensions */
+  --color-brand-charcoal: #17212B;
+  --color-brand-orange: #F46B45;
+  --color-brand-sage: #35665B;
+  --color-brand-cream: #FFF8EE;
+  --color-brand-surface: #FFFFFF;
+  --color-brand-gray: #F3F4F6;
+
+  /* Kitchen Order States */
+  --color-status-pending: var(--status-pending);
+  --color-status-preparing: var(--status-preparing);
+  --color-status-ready: var(--status-ready);
+}
+
+:root {
+  /* UrbanBite Restaurant Design System */
+  /* Surfaces */
+  --background: #FFF8EE;
+  --foreground: #17212B;
+  --card: #FFFFFF;
+  --card-foreground: #17212B;
+  --popover: #FFFFFF;
+  --popover-foreground: #17212B;
+
+  /* Brand Colors & Actions */
+  --primary: #F46B45;
+  --primary-hover: #E05832;
+  --primary-foreground: #FFFFFF;
+  
+  --secondary: #F3F4F6;
+  --secondary-foreground: #17212B;
+
+  --muted: #F5EFEB;
+  --muted-foreground: #6B7280;
+
+  --accent: #FDEEE9;
+  --accent-foreground: #C94C28;
+
+  /* Semantics */
+  --destructive: #DC2626;
+  --success: #35665B;
+  --warning: #F59E0B;
+  --info: #2563EB;
+
+  /* Order States */
+  --status-pending: #F46B45;
+  --status-preparing: #2563EB;
+  --status-ready: #35665B;
+
+  --border: #E8E2D9;
+  --input: #DDD6CC;
+  --ring: #F46B45;
+
+  /* Analytics Charts */
+  --chart-1: #F46B45;
+  --chart-2: #35665B;
+  --chart-3: #17212B;
+  --chart-4: #D97706;
+  --chart-5: #6B7280;
+
+  --radius: 0.75rem;
+
+  /* Sidebar - Dark Charcoal for professional contrast */
+  --sidebar: #17212B;
+  --sidebar-foreground: #F3F4F6;
+  --sidebar-primary: #F46B45;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #24303C;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #232E3A;
+  --sidebar-ring: #F46B45;
+}
+
+.dark {
+  --background: #0E151C;
+  --foreground: #F3F4F6;
+  --card: #17212B;
+  --card-foreground: #F3F4F6;
+  --popover: #17212B;
+  --popover-foreground: #F3F4F6;
+
+  --primary: #F46B45;
+  --primary-hover: #FA815F;
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #222E3A;
+  --secondary-foreground: #F3F4F6;
+
+  --muted: #1E2934;
+  --muted-foreground: #94A3B8;
+
+  --accent: #2C2120;
+  --accent-foreground: #F46B45;
+
+  --destructive: #EF4444;
+  --success: #4E8A7D;
+  --warning: #F59E0B;
+  --info: #3B82F6;
+
+  --status-pending: #F46B45;
+  --status-preparing: #3B82F6;
+  --status-ready: #4E8A7D;
+
+  --border: #263340;
+  --input: #314152;
+  --ring: #F46B45;
+
+  --chart-1: #F46B45;
+  --chart-2: #4E8A7D;
+  --chart-3: #94A3B8;
+  --chart-4: #FBBF24;
+  --chart-5: #475569;
+
+  --sidebar: #111821;
+  --sidebar-foreground: #E2E8F0;
+  --sidebar-primary: #F46B45;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1D2733;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #1E2833;
+  --sidebar-ring: #F46B45;
+}
+
+/* Customer kiosk (/kiosk/*): always predictable lighting */
+.kiosk-root {
+  color-scheme: light;
+  --background: #FFF8EE;
+  --foreground: #17212B;
+  --card: #FFFFFF;
+  --card-foreground: #17212B;
+  --popover: #FFFFFF;
+  --popover-foreground: #17212B;
+  --primary: #F46B45;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #E05832;
+  --secondary: #F3F4F6;
+  --secondary-foreground: #17212B;
+  --muted: #F5EFEB;
+  --muted-foreground: #6B7280;
+  --accent: #FDEEE9;
+  --accent-foreground: #C94C28;
+  --destructive: #DC2626;
+  --success: #35665B;
+  --warning: #F59E0B;
+  --info: #2563EB;
+  --border: #E8E2D9;
+  --input: #DDD6CC;
+  --ring: #F46B45;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.kiosk-root button,
+.kiosk-root [role="button"],
+.kiosk-root input {
+  min-height: max(48px, 3rem);
+}
+.kiosk-root button {
+  min-width: max(48px, 3rem);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Touch targets for counter/tablet and phone POS use (minimum 44px) */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a[href],
+  input,
+  select,
+  textarea,
+  [data-slot="select-trigger"],
+  [data-slot="checkbox"],
+  [data-slot="dropdown-menu-trigger"] {
+    min-height: 44px;
+  }
+
+  button,
+  [data-slot="checkbox"] {
+    min-width: 44px;
+  }
+}
+
+@keyframes pop-burst {
+  0% {
+    transform: rotate(var(--angle)) translateY(0) scale(0);
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--angle)) translateY(-48px) scale(1);
+    opacity: 0;
+  }
+}
+
+.animate-pop-burst {
+  animation: pop-burst 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+:root {
+  --shadow-card: 0 1px 3px 0 rgb(23 33 43 / 0.05), 0 1px 2px -1px rgb(23 33 43 / 0.05);
+  --shadow-card-hover: 0 4px 6px -1px rgb(23 33 43 / 0.08), 0 2px 4px -2px rgb(23 33 43 / 0.06);
+  --shadow-float: 0 10px 25px -5px rgb(23 33 43 / 0.12);
+  --gradient-primary: linear-gradient(135deg, #F46B45 0%, #E05832 100%);
+  --motion-quick: 120ms;
+  --motion-standard: 180ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+.dark {
+  --shadow-card: none;
+  --shadow-card-hover: 0 1px 3px rgb(0 0 0 / 0.4);
+  --shadow-float: 0 8px 24px rgb(0 0 0 / 0.5);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11", "ss01";
+  }
+  body {
+    background-color: var(--background);
+  }
+  h1, h2, h3 {
+    letter-spacing: -0.015em;
+  }
+  ::selection {
+    background: rgb(244 107 69 / 0.25);
+    color: #17212B;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  @media (pointer: coarse) {
+    [data-slot="tabs-list"] {
+      height: auto;
+      min-height: 44px;
+    }
+  }
+  @media (max-width: 1023px) {
+    [data-slot="tabs-list"] {
+      max-width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    [data-slot="tabs-list"]::-webkit-scrollbar {
+      display: none;
+    }
+    [data-slot="tabs-trigger"] {
+      flex: 0 0 auto;
+      padding-inline: 0.875rem;
+    }
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+  [data-slot="card"] {
+    box-shadow: var(--shadow-card);
+    transition: box-shadow var(--motion-standard) var(--ease-standard), border-color var(--motion-standard) var(--ease-standard);
+  }
+  a[data-slot="card"]:hover,
+  button[data-slot="card"]:hover {
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--ring);
+  }
+  [data-slot="button"][data-variant="default"],
+  button[data-slot="button"].bg-primary {
+    background-image: none;
+    background-color: var(--primary);
+    box-shadow: 0 1px 2px 0 rgb(244 107 69 / 0.2);
+    transition: background-color var(--motion-quick) var(--ease-standard), transform var(--motion-quick) var(--ease-standard);
+  }
+  [data-slot="button"][data-variant="default"]:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+  }
+  [data-slot="button"][data-variant="default"]:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="card"],
+  [data-slot="button"] {
+    transition: none !important;
+  }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

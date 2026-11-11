@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- UrbanBite Restaurant Compact Sidebar Mark -->
+  <rect width="64" height="64" rx="16" fill="#17212B"/>
+  <circle cx="32" cy="32" r="23" stroke="#F46B45" stroke-width="2.5" stroke-opacity="0.35"/>
+  <circle cx="32" cy="32" r="17.5" fill="#17212B" stroke="#FFF8EE" stroke-width="1.5"/>
+  <!-- Fork -->
+  <path d="M25 21v7a2 2 0 0 0 2 2v13h2.5V30a2 2 0 0 0 2-2v-7" stroke="#F46B45" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28.2 21v6.5" stroke="#F46B45" stroke-width="2" stroke-linecap="round"/>
+  <!-- Knife -->
+  <path d="M38.5 21c0 5.5-1.5 8.5-3.8 9.5v12.5h2.2V28c2.5-1.2 3.8-3.8 3.8-7z" fill="#FFF8EE"/>
+  <!-- Bite Spark -->
+  <circle cx="39.5" cy="17" r="2.2" fill="#F46B45"/>
+</svg>
