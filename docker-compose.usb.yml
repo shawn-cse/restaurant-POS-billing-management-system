@@ -1,0 +1,9 @@
+# Optional Linux-only support for direct USB thermal printers.
+# Use: docker compose -f docker-compose.yml -f docker-compose.usb.yml up -d --build
+services:
+  backend:
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb
+    device_cgroup_rules:
+      - 'c 189:* rmw'
+      - 'c 180:* rmw'

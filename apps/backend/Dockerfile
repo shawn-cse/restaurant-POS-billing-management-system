@@ -1,0 +1,73 @@
+# Built from the MONOREPO ROOT context (see docker-compose.yml `context: .`)
+# because this app depends on the workspace package @urbanbite/types.
+# Do not try to `docker build` this file with apps/backend as context.
+
+FROM node:22-alpine AS base
+RUN corepack enable
+WORKDIR /repo
+
+# --- deps: install with full workspace visible so pnpm can link @urbanbite/types ---
+# python3/make/g++/linux-headers/eudev-dev/libusb-dev/pkgconfig are for the
+# `usb` package's native addon (direct-USB ESC/POS printing, see
+# apps/backend/src/modules/orders/escpos-usb.ts). It ships a prebuilt
+# linux-x64 musl binary, but empirically its install script doesn't reliably
+# skip straight to that prebuild on Alpine — with no compiler present it
+# falls through to `node-gyp rebuild` and fails outright (verified building
+# this exact package in urbanbite-pos, ported here unchanged). None of this is
+# needed at runtime — see the small eudev-libs/libstdc++ runtime deps below
+# instead of this whole toolchain.
+FROM base AS deps
+RUN apk add --no-cache openssl python3 make g++ linux-headers eudev-dev libusb-dev pkgconfig
+ENV PNPM_CONFIG_FETCH_TIMEOUT=600000 \
+    PNPM_CONFIG_FETCH_RETRIES=5 \
+    PNPM_CONFIG_NETWORK_CONCURRENCY=4
+COPY .npmrc* pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY apps/backend/package.json apps/backend/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY packages/types/package.json packages/types/package.json
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+# --- builder: compile types package, generate Prisma client, build Nest ---
+FROM deps AS builder
+COPY packages/types packages/types
+COPY apps/backend apps/backend
+RUN pnpm --filter @urbanbite/types build
+RUN pnpm --filter @urbanbite/backend exec prisma generate
+RUN pnpm --filter @urbanbite/backend build
+
+# --- runtime: slim image, only what's needed to run ---
+# Keeps the SAME directory depth as the workspace (/repo/apps/backend, not a
+# flattened /app) — pnpm's per-package node_modules/.bin/* entries (prisma,
+# nest, etc.) are symlinks with relative paths back into the root
+# node_modules/.pnpm store, and flattening the tree breaks them silently
+# (npx then can't find the local `prisma` binary and falls back to fetching
+# an arbitrary "latest" version from the registry at container start).
+FROM node:22-alpine AS runtime
+# eudev-libs (libudev.so, used by `usb`'s libusb backend for device
+# enumeration) and libstdc++ (the addon is a C++ build) are the only
+# runtime-side additions for direct-USB printing — libusb itself is
+# statically linked into the addon, so no separate libusb runtime package
+# is needed (same verification urbanbite-pos already did for this exact
+# package). postgresql16-client (pg_dump/pg_restore) backs the Backup
+# module (apps/backend/src/backup/) — version-pinned to match the
+# postgres:16-alpine server in docker-compose.yml, since pg_dump's custom
+# format is not guaranteed compatible across major versions.
+RUN apk add --no-cache openssl eudev-libs libstdc++ postgresql16-client
+WORKDIR /repo
+ENV NODE_ENV=production
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
+
+COPY --from=builder /repo/node_modules ./node_modules
+COPY --from=builder /repo/apps/backend/node_modules ./apps/backend/node_modules
+COPY --from=builder /repo/apps/backend/dist ./apps/backend/dist
+COPY --from=builder /repo/apps/backend/prisma ./apps/backend/prisma
+COPY --from=builder /repo/apps/backend/package.json ./apps/backend/package.json
+COPY --from=builder /repo/packages/types/dist ./packages/types/dist
+COPY --from=builder /repo/packages/types/package.json ./packages/types/package.json
+COPY --from=builder /repo/packages/types/node_modules ./packages/types/node_modules
+
+WORKDIR /repo/apps/backend
+EXPOSE 4000
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]

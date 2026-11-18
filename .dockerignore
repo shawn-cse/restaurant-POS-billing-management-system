@@ -1,0 +1,11 @@
+**/node_modules
+**/.next
+**/dist
+**/.env
+.env
+.git
+.gitignore
+*.zip
+!apps/web/public/urbanbite-source.zip
+*.log
+*.pdf

@@ -1,0 +1,36 @@
+{
+  "name": "urbanbite-restaurant",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Urban Bite web-based restaurant POS and management system",
+  "author": "Urban Bite Restaurant (modified distribution; original credits in NOTICE and COPYRIGHT)",
+  "license": "AGPL-3.0-only",
+  "keywords": [
+    "restaurant-management",
+    "restaurant-pos",
+    "point-of-sale",
+    "kitchen-display-system",
+    "inventory-management",
+    "self-hosted",
+    "offline-first",
+    "restaurant-payroll",
+    "qr-ordering",
+    "nestjs",
+    "nextjs"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "turbo": "^2.10.9",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "pnpm@11.10.0",
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,62 @@
+name: urbanbite_restaurant
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: UrbanBite_Restaurant_Postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: urbanbite
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: urbanbite
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urbanbite -d urbanbite"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    image: urbanbite_restaurant-backend:local
+    container_name: UrbanBite_Restaurant_Backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://urbanbite:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/urbanbite
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_EXPIRES_IN: 12h
+      PORT: "4000"
+      CORS_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:9000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      UPLOADS_DIR: /data/uploads
+      INTEGRATION_SECRET_KEY: ${INTEGRATION_SECRET_KEY:-}
+      SYNC_API_KEY: ${SYNC_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "4000"
+    volumes:
+      - uploads_data:/data/uploads
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        BACKEND_URL: http://backend:4000
+    image: urbanbite_restaurant-web:local
+    container_name: UrbanBite_Restaurant_Web
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-9000}:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  uploads_data:

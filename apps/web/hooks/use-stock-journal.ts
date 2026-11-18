@@ -1,0 +1,404 @@
+"use client";
+
+import type { IngredientUnit, ProductionEntryDto, StockJournalDraftDto, StockJournalEntryDto, StockJournalType, WasteEntryDto, WasteReason } from "@urbanbite/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
+export interface StockItem {
+  id: string;
+  name: string;
+  unit: IngredientUnit;
+  kind: "PURCHASED" | "PREPARED";
+  category: string | null;
+  currentStock: string;
+  units: IngredientUnit[];
+  /** Weighted-average cost per stock unit; only sent to people who may see production costs. */
+  costPerUnit?: string;
+}
+
+export interface ProductionLine {
+  id: string;
+  role: "INPUT" | "OUTPUT";
+  ingredientId: string;
+  enteredQuantity: string;
+  enteredUnit: IngredientUnit;
+  quantity: string;
+  ingredient: { id: string; name: string; unit: IngredientUnit };
+}
+
+export interface ProductionEntry {
+  id: string;
+  entryNo: string;
+  status: "DRAFT" | "POSTED" | "VOIDED";
+  producedAt: string;
+  shift: string | null;
+  location: string | null;
+  batchRef: string | null;
+  notes: string | null;
+  voidReason: string | null;
+  responsibleName: string | null;
+  lines: ProductionLine[];
+  correctsEntry: { id: string; entryNo: string } | null;
+  correctedBy: { id: string; entryNo: string; status: string }[];
+}
+
+export interface PreviewLine {
+  role: "INPUT" | "OUTPUT";
+  ingredientId: string;
+  name: string;
+  entered: string;
+  quantity: string;
+  unit: IngredientUnit;
+  balanceBefore: string;
+  balanceAfter: string;
+  short: string | null;
+}
+
+export interface JournalMovement {
+  id: string;
+  type: string;
+  quantity: string;
+  note: string | null;
+  createdAt: string;
+  productionEntryId: string | null;
+  locationId?: string | null;
+  wasteEntryId: string | null;
+  deviceId: string | null;
+  ingredient: { id: string; name: string; unit: IngredientUnit };
+  createdBy: { id: string; name: string };
+}
+
+export interface WasteEntry {
+  id: string;
+  kind: "INGREDIENT" | "FINISHED";
+  ingredient: { id: string; name: string; unit: IngredientUnit };
+  quantity: string;
+  enteredQuantity: string;
+  enteredUnit: IngredientUnit;
+  reason: WasteReason;
+  shift: string | null;
+  location: string | null;
+  note: string | null;
+  photoUrl?: string | null;
+  occurredAt: string;
+  includedInProduction: boolean;
+  status: "POSTED" | "PENDING_APPROVAL" | "REJECTED" | "REVERSED";
+  createdByName: string | null;
+  reverseReason: string | null;
+}
+
+export interface WasteReport {
+  entryCount: number;
+  byItem: { key: string; label: string; unit: string; quantity: string; count: number }[];
+  byReason: { key: string; label: string; unit: string; quantity: string; count: number }[];
+  trend: { day: string; entries: number }[];
+  alreadyInProduction: number;
+  pendingApproval: number;
+}
+
+export interface ProductionReport {
+  entryCount: number;
+  produced: { ingredientId: string; name: string; unit: string; quantity: string }[];
+  consumed: { ingredientId: string; name: string; unit: string; quantity: string }[];
+}
+
+const qs = (branchId: string | null, filters: Record<string, string | undefined> = {}) => {
+  const p = new URLSearchParams({ branchId: branchId ?? "" });
+  for (const [k, v] of Object.entries(filters)) if (v) p.set(k, v);
+  return p.toString();
+};
+
+export function csvUrl(path: string, branchId: string | null, filters: Record<string, string | undefined> = {}) {
+  return `/api/v1/inventory/${path}?${qs(branchId, filters)}`;
+}
+
+export const useStockItems = (branchId: string | null) =>
+  useQuery({
+    queryKey: ["stock-items", branchId],
+    queryFn: () => api.get<StockItem[]>(`/inventory/production/items?${qs(branchId)}`),
+    enabled: !!branchId,
+  });
+
+export const useProductionEntries = (branchId: string | null, filters: Record<string, string | undefined>) =>
+  useQuery({
+    queryKey: ["production", branchId, filters],
+    queryFn: () => api.get<ProductionEntry[]>(`/inventory/production?${qs(branchId, filters)}`),
+    enabled: !!branchId,
+  });
+
+export const useProductionReport = (branchId: string | null, filters: Record<string, string | undefined>) =>
+  useQuery({
+    queryKey: ["production-report", branchId, filters],
+    queryFn: () => api.get<ProductionReport>(`/inventory/production/report?${qs(branchId, filters)}`),
+    enabled: !!branchId,
+  });
+
+export const useSuggestions = (branchId: string | null, productId: string) =>
+  useQuery({
+    queryKey: ["production-suggest", branchId, productId],
+    queryFn: () =>
+      api.get<{ ingredientId: string; name: string; unit: IngredientUnit; lastQuantity: string }[]>(
+        `/inventory/production/suggest/${productId}?${qs(branchId)}`,
+      ),
+    enabled: !!branchId && !!productId,
+  });
+
+function useRefresh() {
+  const qc = useQueryClient();
+  return () => {
+    for (const k of ["production", "production-report", "stock-items", "journal", "journal-entries", "journal-entry", "ingredients", "waste-entries", "waste-report", "expiring", "reorder", "places", "places-list", "place-transfers"]) {
+      void qc.invalidateQueries({ queryKey: [k] });
+    }
+  };
+}
+
+type Lines = Pick<ProductionEntryDto, "inputs" | "outputs">;
+
+export const usePreviewProduction = (branchId: string | null) =>
+  useMutation({
+    mutationFn: (body: Lines) =>
+      api.post<{ lines: PreviewLine[]; canPost: boolean }>(`/inventory/production/preview?${qs(branchId)}`, body),
+  });
+
+export function useSaveProduction(branchId: string | null) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (body: Omit<ProductionEntryDto, "post"> & { post: boolean }) =>
+      api.post<ProductionEntry>(`/inventory/production?${qs(branchId)}`, body),
+    onSuccess: refresh,
+  });
+}
+
+export function useProductionAction(branchId: string | null) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (a: { id: string; action: "post" | "void" | "correct"; body?: unknown }) =>
+      api.post<ProductionEntry>(`/inventory/production/${a.id}/${a.action}?${qs(branchId)}`, a.body ?? {}),
+    onSuccess: refresh,
+  });
+}
+
+export const useJournal = (branchId: string | null, filters: Record<string, string | undefined>) =>
+  useQuery({
+    queryKey: ["journal", branchId, filters],
+    queryFn: () => api.get<{ items: JournalMovement[]; nextCursor: string | null }>(`/inventory/journal?${qs(branchId, filters)}`),
+    enabled: !!branchId,
+  });
+
+export function useReceiveStock(branchId: string | null) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (body: { ingredientId: string; quantity: string; unit: IngredientUnit; reference?: string; note?: string; expiryDate?: string }) =>
+      api.post(`/inventory/journal/receipts?${qs(branchId)}`, body),
+    onSuccess: refresh,
+  });
+}
+
+export function useJournalAdjust(branchId: string | null) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (body: { ingredientId: string; direction: "ADD" | "REMOVE"; quantity: string; unit: IngredientUnit; reason: string }) =>
+      api.post(`/inventory/journal/adjustments?${qs(branchId)}`, body),
+    onSuccess: refresh,
+  });
+}
+
+export const useWasteEntries = (branchId: string | null, filters: Record<string, string | undefined>) =>
+  useQuery({
+    queryKey: ["waste-entries", branchId, filters],
+    queryFn: () => api.get<WasteEntry[]>(`/inventory/waste/entries?${qs(branchId, filters)}`),
+    enabled: !!branchId,
+  });
+
+export const useWasteReport = (branchId: string | null, filters: Record<string, string | undefined>) =>
+  useQuery({
+    queryKey: ["waste-report", branchId, filters],
+    queryFn: () => api.get<WasteReport>(`/inventory/waste/report?${qs(branchId, filters)}`),
+    enabled: !!branchId,
+  });
+
+export function useCreateWaste(branchId: string | null) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (body: Omit<WasteEntryDto, "includedInProduction"> & { includedInProduction?: boolean }) =>
+      api.post<WasteEntry>(`/inventory/waste/entries?${qs(branchId)}`, body),
+    onSuccess: refresh,
+  });
+}
+
+export function useWasteAction(branchId: string | null) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (a: { id: string; action: "approve" | "reject" | "reverse"; body?: unknown }) =>
+      api.post<WasteEntry>(`/inventory/waste/entries/${a.id}/${a.action}?${qs(branchId)}`, a.body ?? {}),
+    onSuccess: refresh,
+  });
+}
+
+export interface ExpiringRow { batchId: string; ingredientId: string; name: string; unit: IngredientUnit; storageLocation: string | null; quantity: string; expiryDate: string; expired: boolean; daysLeft: number }
+export const useExpiring = (branchId: string | null, days = 7) =>
+  useQuery({ queryKey: ["expiring", branchId, days], queryFn: () => api.get<ExpiringRow[]>(`/inventory/journal/expiring?${qs(branchId, { days: String(days) })}`), enabled: !!branchId });
+
+export interface ReorderRow { id: string; name: string; unit: IngredientUnit; category: string | null; storageLocation: string | null; inStock: string; minimum: string; par: string; toBuy: string }
+export const useReorder = (branchId: string | null) =>
+  useQuery({ queryKey: ["reorder", branchId], queryFn: () => api.get<ReorderRow[]>(`/inventory/journal/reorder?${qs(branchId)}`), enabled: !!branchId });
+
+export interface StockTakeResult { id: string; takenAt: string; area: string | null; lines: { ingredientId: string; name: string; unit: string; expected: string; counted: string; difference: string }[] }
+export function useStockTake(branchId: string | null) {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (body: { area?: string; note?: string; lines: { ingredientId: string; counted: string; unit: IngredientUnit }[]; idempotencyKey: string }) =>
+      api.post<StockTakeResult>(`/inventory/journal/stock-takes?${qs(branchId)}`, body),
+    onSuccess: () => { refresh(); },
+  });
+}
+
+export interface StockPlace { id: string; name: string; isActive: boolean }
+export interface PlaceMatrix {
+  locations: StockPlace[];
+  items: { id: string; name: string; unit: IngredientUnit; kind: string; category: string | null; total: string; levels: Record<string, string>; unassigned: string; needsRecount: boolean }[];
+}
+export const usePlaceMatrix = (branchId: string | null) =>
+  useQuery({ queryKey: ["places", branchId], queryFn: () => api.get<PlaceMatrix>(`/inventory/locations/matrix?${qs(branchId)}`), enabled: !!branchId });
+export const usePlaces = (branchId: string | null) =>
+  useQuery({ queryKey: ["places-list", branchId], queryFn: () => api.get<StockPlace[]>(`/inventory/locations?${qs(branchId)}`), enabled: !!branchId });
+export const usePlaceTransfers = (branchId: string | null) =>
+  useQuery({ queryKey: ["place-transfers", branchId], queryFn: () => api.get<{ id: string; createdAt: string; quantity: string; item?: { name: string; unit: string }; from: string; to: string; by: string | null; note: string | null }[]>(`/inventory/locations/transfers?${qs(branchId)}`), enabled: !!branchId });
+export function usePlaceActions(branchId: string | null) {
+  const qc = useQueryClient();
+  const done = () => { for (const k of ["places", "places-list", "place-transfers", "ingredients", "stock-items"]) void qc.invalidateQueries({ queryKey: [k] }); };
+  return {
+    create: useMutation({ mutationFn: (name: string) => api.post(`/inventory/locations?${qs(branchId)}`, { name }), onSuccess: done }),
+    update: useMutation({ mutationFn: (v: { id: string; name?: string; isActive?: boolean }) => api.patch(`/inventory/locations/${v.id}?${qs(branchId)}`, { name: v.name, isActive: v.isActive }), onSuccess: done }),
+    transfer: useMutation({ mutationFn: (v: { ingredientId: string; fromLocationId: string | null; toLocationId: string; quantity: string; unit: IngredientUnit; note?: string }) => api.post(`/inventory/locations/transfers?${qs(branchId)}`, { ...v, idempotencyKey: `web-${crypto.randomUUID()}` }), onSuccess: done }),
+  };
+}
+
+export interface StockSummaryRow {
+  ingredientId: string; name: string; unit: IngredientUnit; kind: "PURCHASED" | "PREPARED"; category: string | null; location: string | null;
+  opening: string; receipts: string; manufacturingUsed: string; manufacturingProduced: string; sales: string; waste: string; adjustments: string; closing: string; liveStock: string | null;
+}
+export const useStockSummary = (branchId: string | null, filters: Record<string, string | undefined>) =>
+  useQuery({
+    queryKey: ["stock-summary", branchId, filters],
+    queryFn: () => api.get<{ note: string; rows: StockSummaryRow[] }>(`/inventory/journal/summary?${qs(branchId, filters)}`),
+    enabled: !!branchId,
+  });
+
+// ---- Stock journal entries: one list for every kind; transfer / waste / correction have their own form ----------
+
+export type JournalKind = "PRODUCTION" | StockJournalType;
+export type JournalStatus = "DRAFT" | "POSTED" | "VOIDED";
+
+export interface JournalRowLine { name: string; quantity: string; unit: string; place: string | null }
+export interface JournalRow {
+  id: string;
+  kind: JournalKind;
+  entryNo: string;
+  status: JournalStatus;
+  date: string;
+  reason: string | null;
+  out: JournalRowLine[];
+  in: JournalRowLine[];
+  places: string[];
+  value: string | null;
+  createdBy: string | null;
+  postedBy: string | null;
+  postedAt: string | null;
+}
+
+export interface JournalEntryLine {
+  id: string;
+  ingredientId: string;
+  direction: "OUT" | "IN";
+  enteredQuantity: string;
+  enteredUnit: IngredientUnit;
+  quantity: string;
+  fromLocationId: string | null;
+  fromLocationName: string | null;
+  toLocationId: string | null;
+  toLocationName: string | null;
+  wasteReason: WasteReason | null;
+  note: string | null;
+  unitCost: string | null;
+  value: string | null;
+  wasteStatus: WasteEntry["status"] | null;
+  ingredient: { id: string; name: string; unit: IngredientUnit; kind: "PURCHASED" | "PREPARED" };
+}
+
+export interface JournalEntry {
+  id: string;
+  kind: StockJournalType;
+  type: StockJournalType;
+  entryNo: string;
+  status: JournalStatus;
+  occurredAt: string;
+  reason: string | null;
+  notes: string | null;
+  value: string | null;
+  createdAt: string;
+  createdByName: string | null;
+  postedAt: string | null;
+  postedByName: string | null;
+  voidedAt: string | null;
+  voidedByName: string | null;
+  voidReason: string | null;
+  lines: JournalEntryLine[];
+}
+
+export const useJournalEntries = (branchId: string | null, filters: Record<string, string | undefined>) =>
+  useQuery({
+    queryKey: ["journal-entries", branchId, filters],
+    queryFn: () => api.get<JournalRow[]>(`/inventory/journal/entries?${qs(branchId, filters)}`),
+    enabled: !!branchId,
+    placeholderData: (prev) => prev,
+  });
+
+export const useJournalEntry = (branchId: string | null, id: string | null) =>
+  useQuery({
+    queryKey: ["journal-entry", branchId, id],
+    queryFn: () => api.get<JournalEntry>(`/inventory/journal/entries/${id}?${qs(branchId)}`),
+    enabled: !!branchId && !!id,
+  });
+
+export const useProductionEntry = (branchId: string | null, id: string | null) =>
+  useQuery({
+    queryKey: ["production", branchId, "one", id],
+    queryFn: () => api.get<ProductionEntryFull>(`/inventory/production/${id}?${qs(branchId)}`),
+    enabled: !!branchId && !!id,
+  });
+
+export interface ProductionEntryFull extends ProductionEntry {
+  createdAt: string;
+  postedAt: string | null;
+  voidedAt: string | null;
+  totalCost: string | null;
+  lines: (ProductionLine & { locationName: string | null; rejectedQuantity: string; lineCost: string | null })[];
+}
+
+export function useJournalEntryActions(branchId: string | null) {
+  const refresh = useRefresh();
+  const base = `/inventory/journal/entries`;
+  return {
+    create: useMutation({
+      mutationFn: (body: StockJournalEntryDto) => api.post<JournalEntry>(`${base}?${qs(branchId)}`, body),
+      onSuccess: refresh,
+    }),
+    update: useMutation({
+      mutationFn: (v: { id: string; body: StockJournalDraftDto }) => api.patch<JournalEntry>(`${base}/${v.id}?${qs(branchId)}`, v.body),
+      onSuccess: refresh,
+    }),
+    remove: useMutation({
+      mutationFn: (id: string) => api.delete(`${base}/${id}?${qs(branchId)}`),
+      onSuccess: refresh,
+    }),
+    post: useMutation({
+      mutationFn: (id: string) => api.post<JournalEntry>(`${base}/${id}/post?${qs(branchId)}`, {}),
+      onSuccess: refresh,
+    }),
+    void: useMutation({
+      mutationFn: (v: { id: string; reason: string }) => api.post<JournalEntry>(`${base}/${v.id}/void?${qs(branchId)}`, { reason: v.reason }),
+      onSuccess: refresh,
+    }),
+  };
+}
