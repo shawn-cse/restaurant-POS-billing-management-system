@@ -145,7 +145,7 @@ export default function HomePage() {
               className="mt-2 h-11 text-sm font-medium"
               disabled={login.isPending}
             >
-              {login.isPending ? "Signing in…" : "Sign in to Dashboard"}
+              {login.isPending ? "Signing in…" : "Sign in"}
             </Button>
           </form>
         </div>
