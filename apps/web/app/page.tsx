@@ -9,7 +9,6 @@ import {
   AlertCircle,
   ChefHat,
   ClipboardList,
-  ShieldCheck,
   UtensilsCrossed,
 } from "lucide-react";
 import { AuthRedirectGate } from "@/components/marketing/auth-redirect-gate";
@@ -29,18 +28,11 @@ export default function HomePage() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<LoginDto>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
-
-  const fillAdminCredentials = () => {
-    setValue("email", "admin", { shouldValidate: true });
-    setValue("password", "abc123", { shouldValidate: true });
-    setError(null);
-  };
 
   const onSubmit = (dto: LoginDto) => {
     setError(null);
@@ -92,38 +84,13 @@ export default function HomePage() {
         </p>
 
         {/* Embedded Sign In Card */}
-        <div className="mt-7 rounded-2xl border border-border bg-card/95 p-6 text-left shadow-sm backdrop-blur-sm sm:p-7">
+        <div className="mt-8 rounded-2xl border border-border bg-card/95 p-6 text-left shadow-sm backdrop-blur-sm sm:p-7">
           <h2 className="text-xl font-semibold tracking-tight text-foreground text-center">
             Sign in to manage your restaurant
           </h2>
 
-          {/* Admin Credentials Quick-Fill Banner */}
-          <div className="mt-4 flex flex-col gap-2 rounded-xl border border-border/80 bg-muted/50 p-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs">
-              <div className="flex items-center gap-1.5 font-medium text-foreground">
-                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                <span>Admin Login:</span>
-              </div>
-              <p className="mt-1 text-muted-foreground">
-                User: <span className="font-mono font-medium text-foreground">admin</span> (or <span className="font-mono text-foreground">admin@gmail.com</span>)
-              </p>
-              <p className="text-muted-foreground">
-                Pass: <span className="font-mono font-medium text-foreground">abc123</span>
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={fillAdminCredentials}
-              className="h-8 shrink-0 text-xs font-medium"
-            >
-              Auto Fill
-            </Button>
-          </div>
-
           {/* Login Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-5 flex flex-col gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email" className="text-xs font-medium">
                 Username or email
@@ -137,7 +104,7 @@ export default function HomePage() {
                 spellCheck={false}
                 enterKeyHint="next"
                 className="h-10"
-                placeholder="admin or admin@gmail.com"
+                placeholder="Enter your username or email"
                 {...register("email")}
               />
               {errors.email && (
@@ -154,7 +121,7 @@ export default function HomePage() {
                 autoComplete="current-password"
                 enterKeyHint="go"
                 className="h-10"
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 {...register("password")}
               />
               {errors.password && (
@@ -175,15 +142,11 @@ export default function HomePage() {
             <Button
               type="submit"
               size="lg"
-              className="mt-1 h-11 text-sm font-medium"
+              className="mt-2 h-11 text-sm font-medium"
               disabled={login.isPending}
             >
               {login.isPending ? "Signing in…" : "Sign in to Dashboard"}
             </Button>
-
-            <p className="text-center text-[11px] text-muted-foreground">
-              Other accounts can be created by the admin in <span className="font-medium text-foreground">Settings &gt; Staff</span>.
-            </p>
           </form>
         </div>
 
