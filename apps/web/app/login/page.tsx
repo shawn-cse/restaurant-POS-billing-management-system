@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,8 +120,20 @@ export default function LoginPage() {
             </div>
           )}
 
-          <Button type="submit" className="mt-2 h-12 text-base" disabled={login.isPending}>
-            {login.isPending ? "Signing in…" : "Sign in"}
+          <Button
+            type="submit"
+            title="Sign in to your account"
+            className="mt-2 h-12 text-base font-semibold transition-all duration-200 hover:opacity-95 active:scale-[0.99] cursor-pointer"
+            disabled={login.isPending}
+          >
+            {login.isPending ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Signing in…</span>
+              </span>
+            ) : (
+              "Sign in"
+            )}
           </Button>
           {demo?.demo && (
             <Link href="/demo" className="inline-flex h-12 items-center justify-center rounded-lg border border-border text-base font-medium hover:bg-muted">Try the live demo (no password)</Link>

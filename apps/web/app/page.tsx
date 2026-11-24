@@ -9,6 +9,7 @@ import {
   AlertCircle,
   ChefHat,
   ClipboardList,
+  Loader2,
   UtensilsCrossed,
 } from "lucide-react";
 import { AuthRedirectGate } from "@/components/marketing/auth-redirect-gate";
@@ -70,7 +71,10 @@ export default function HomePage() {
 
       <div className="relative mx-auto w-full max-w-md">
         {/* Logo & Brand Header */}
-        <div className="mx-auto flex w-fit items-center justify-center rounded-3xl border border-border/90 bg-card p-3.5 shadow-sm">
+        <div
+          title="Urban Bite"
+          className="mx-auto flex w-fit items-center justify-center rounded-3xl border border-border/90 bg-card p-3.5 shadow-sm transition-transform duration-200 hover:scale-105"
+        >
           <Logo size={60} />
         </div>
         <p className="mt-5 text-xs font-bold uppercase tracking-[0.25em] text-primary">
@@ -103,7 +107,8 @@ export default function HomePage() {
                 autoCorrect="off"
                 spellCheck={false}
                 enterKeyHint="next"
-                className="h-11 text-base font-medium text-foreground placeholder:text-muted-foreground/70"
+                title="Enter your username or email address"
+                className="h-11 text-base font-medium text-foreground placeholder:text-muted-foreground/70 transition-colors focus-visible:ring-2 focus-visible:ring-primary"
                 placeholder="Enter your username or email"
                 {...register("email")}
               />
@@ -120,7 +125,8 @@ export default function HomePage() {
                 id="password"
                 autoComplete="current-password"
                 enterKeyHint="go"
-                className="h-11 text-base font-medium text-foreground placeholder:text-muted-foreground/70"
+                title="Enter your password"
+                className="h-11 text-base font-medium text-foreground placeholder:text-muted-foreground/70 transition-colors focus-visible:ring-2 focus-visible:ring-primary"
                 placeholder="Enter your password"
                 {...register("password")}
               />
@@ -132,7 +138,7 @@ export default function HomePage() {
             {error && (
               <div
                 role="alert"
-                className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm font-medium text-destructive"
+                className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm font-medium text-destructive transition-all"
               >
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{error}</span>
@@ -142,25 +148,42 @@ export default function HomePage() {
             <Button
               type="submit"
               size="lg"
-              className="mt-2 h-12 text-base font-semibold shadow-sm"
+              title="Sign in to your account"
+              className="mt-2 h-12 w-full text-base font-semibold shadow-sm transition-all duration-200 hover:opacity-95 active:scale-[0.99] cursor-pointer"
               disabled={login.isPending}
             >
-              {login.isPending ? "Signing in…" : "Sign in"}
+              {login.isPending ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Signing in…</span>
+                </span>
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
         </div>
 
         {/* Feature Badges */}
         <div className="mt-8 grid grid-cols-3 gap-2.5 text-xs text-muted-foreground">
-          <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card/80 p-3.5 font-semibold text-foreground shadow-xs">
+          <div
+            title="Point of sale terminal for fast billing, takeaway, and dine-in orders"
+            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card/80 p-3.5 font-semibold text-foreground shadow-xs transition-all duration-150 hover:border-primary/50 hover:bg-card"
+          >
             <UtensilsCrossed className="h-5 w-5 text-primary" />
             <span className="text-xs font-semibold">Point of sale</span>
           </div>
-          <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card/80 p-3.5 font-semibold text-foreground shadow-xs">
+          <div
+            title="Kitchen Display System for live orders and KOT ticket preparation"
+            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card/80 p-3.5 font-semibold text-foreground shadow-xs transition-all duration-150 hover:border-primary/50 hover:bg-card"
+          >
             <ChefHat className="h-5 w-5 text-primary" />
             <span className="text-xs font-semibold">Kitchen</span>
           </div>
-          <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card/80 p-3.5 font-semibold text-foreground shadow-xs">
+          <div
+            title="Operations management for tables, floor plans, inventory, and staff"
+            className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-card/80 p-3.5 font-semibold text-foreground shadow-xs transition-all duration-150 hover:border-primary/50 hover:bg-card"
+          >
             <ClipboardList className="h-5 w-5 text-primary" />
             <span className="text-xs font-semibold">Operations</span>
           </div>
