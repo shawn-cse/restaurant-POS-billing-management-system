@@ -11,7 +11,7 @@ Urban Bite is a self-hosted, web-based restaurant point-of-sale (POS) and manage
 | **Owner / Admin** | `admin` | `admin@gmail.com` | `abc123` | Full dashboard access |
 | **Clean Setup** | *(Your username)* | *(Your email)* | *(Your password)* | Create via initial setup wizard |
 
-> Sign in using either your **Username** (`admin`) or **Email** (`admin@gmail.com`). Additional staff accounts can be created under **Settings > Staff**.
+> Sign in using either your **Username** (`admin`) or **Email** (`admin@gmail.com`) with Password (`abc123`).
 
 ---
 
